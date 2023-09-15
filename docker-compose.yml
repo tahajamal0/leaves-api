@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  db:
+    image: mariadb
+    restart: always
+    environment:
+      MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
+      MYSQL_DATABASE: leaves-api-db
+      MYSQL_USER: root
+      MYSQL_PASSWORD: ''
+    volumes:
+      - db-data:/var/lib/mysql
+    networks:
+      - api-network
+
+  www:
+    build: docker/php
+    container_name: leaves-api
+    ports:
+      - '8050:80'
+    volumes:
+      - ./docker/php/vhosts:/etc/apache2/sites-enabled
+      - ./:/var/www
+    restart: always
+    networks:
+      - api-network
+
+networks:
+  api-network:
+
+volumes:
+  db-data:

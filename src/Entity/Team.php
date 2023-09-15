@@ -29,6 +29,11 @@ class Team
     #[Groups(['team'])]
     private Collection $users;
 
+    #[ORM\OneToOne(cascade: ['persist'])]
+    #[ORM\JoinColumn(nullable: false)]
+    #[Groups(['team'])]
+    private ?User $manager = null;
+
     public function __construct()
     {
         $this->users = new ArrayCollection();
@@ -89,6 +94,18 @@ class Team
                 $user->setTeam(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getManager(): ?User
+    {
+        return $this->manager;
+    }
+
+    public function setManager(User $manager): static
+    {
+        $this->manager = $manager;
 
         return $this;
     }

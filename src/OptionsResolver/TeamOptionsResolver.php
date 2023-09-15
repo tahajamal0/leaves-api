@@ -27,4 +27,15 @@ class TeamOptionsResolver extends OptionsResolver
 
     return $this;
   }
+
+  public function configureManager(bool $isRequired = true): self
+  {
+    $this->setDefined("manager")->setAllowedTypes("manager", "string");
+
+    if($isRequired) {
+      $this->setRequired("manager");
+    }
+
+    return $this;
+  }
 }

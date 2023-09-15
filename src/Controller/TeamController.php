@@ -43,7 +43,7 @@ class TeamController extends AbstractController
     }
 
     #[Route('/teams', name: "create_team", methods: ["POST"])]
-    public function createTeam(Request $request, EntityManagerInterface $entityManager, ValidatorInterface $validator, TeamOptionsResolver $userOptionsResolver, SerializerInterface $serializer) : JsonResponse
+    public function createTeam(Request $request, EntityManagerInterface $entityManager, ValidatorInterface $validator, TeamOptionsResolver $userOptionsResolver, SerializerInterface $serializer, UserRepository $userRepository) : JsonResponse
     {
         try {
             $requestBody = json_decode($request->getContent(), true);
@@ -52,11 +52,16 @@ class TeamController extends AbstractController
             $fields = $userOptionsResolver
             ->configureName(true)
             ->configureDescription(true)    
+            ->configureManager(true)    
             ->resolve($requestBody);
+            
+            $manager = $userRepository->findOneBy(['id' => $fields["manager"]]);
             
             $team = new team();
             $team->setName($fields["name"]);
             $team->setDescription($fields["description"]);
+            $manager->setTeam($team);
+            $team->setManager($manager);
             
             $errors = $validator->validate($team);
             if(count($errors) > 0){
@@ -90,7 +95,7 @@ class TeamController extends AbstractController
     }
 
     #[Route('/teams/{id}', name: 'update_team', methods: ["PATCH", "PUT"])]
-    public function updateTeam(Team $team, Request $request, EntityManagerInterface $entityManager, ValidatorInterface $validator, TeamOptionsResolver $userOptionsResolver, SerializerInterface $serializer) : JsonResponse
+    public function updateTeam(Team $team, Request $request, EntityManagerInterface $entityManager, ValidatorInterface $validator, TeamOptionsResolver $userOptionsResolver, SerializerInterface $serializer, UserRepository $userRepository) : JsonResponse
     {
         try {
             $requestBody = json_decode($request->getContent(), true);
@@ -100,6 +105,7 @@ class TeamController extends AbstractController
             $fields = $userOptionsResolver
             ->configureName($isPutMethod)
             ->configureDescription($isPutMethod)          
+            ->configureManager($isPutMethod)          
             ->resolve($requestBody);
             
             foreach ($fields as $field => $value) {
@@ -109,6 +115,11 @@ class TeamController extends AbstractController
                         break;
                     case "description":
                         $team->setDescription($fields["description"]);
+                        break;
+                    case "manager":
+                        $manager = $userRepository->findOneBy(['id' => $fields["manager"]]);
+                        $manager->setTeam($team);
+                        $team->setManager($manager);
                         break;
                 }
             }

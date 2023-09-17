@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\User;
 use App\OptionsResolver\UserOptionsResolver;
 use App\OptionsResolver\PaginatorOptionsResolver;
+use App\Repository\LeaveRepository;
 use App\Repository\TeamRepository;
 use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -24,10 +25,33 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
 class UserController extends AbstractController
 {
     #[Route('/users', name: 'users', methods: ["GET"])]
-    public function index(UserRepository $userRepository, SerializerInterface $serializer): JsonResponse
+    public function index(UserRepository $userRepository, SerializerInterface $serializer, Request $request): JsonResponse
     {
         try {
-            $users = $userRepository->findAll();
+            $queryParams = $request->query->all();
+            $findUser = $queryParams["email"] ?? '';
+
+            if($findUser !== '') {
+                $users = $userRepository->findOneBy(['email' => $findUser]);
+            }
+            else{
+                $users = $userRepository->findAll();
+            }
+
+            $data = $serializer->serialize($users, 'json', ['groups' => 'user']);
+
+            return new JsonResponse($data, 200, [], true);
+        } catch (Exception $e) {
+            return new BadRequestHttpException($e->getMessage());   
+        }
+    }
+
+    #[Route('/users/team/{id}', name: 'usersByTeam', methods: ["GET"])]
+    public function getUsersByTeam(int $id, UserRepository $userRepository, SerializerInterface $serializer, Request $request, TeamRepository $teamRepository): JsonResponse
+    {
+        try {
+            $teams = $teamRepository->findOneBy(['id' => $id]);
+            $users = $teams ? $teams->getUsers() : [];
 
             $data = $serializer->serialize($users, 'json', ['groups' => 'user']);
 
@@ -80,8 +104,25 @@ class UserController extends AbstractController
     }
 
     #[Route('/users/{id}', name: 'delete_user', methods: ["DELETE"])]
-    public function deleteUser(User $user, EntityManagerInterface $entityManager) : JsonResponse
+    public function deleteUser(int $id, User $user, EntityManagerInterface $entityManager, LeaveRepository $leaveRepository, TeamRepository $teamRepository) : JsonResponse
     {
+
+        $team = $teamRepository->findOneBy(['manager' => $id]);
+
+        $status = 'all';
+        $order = 'ASC';
+        $size = 100;
+        $page = 1;
+
+        $leaves = $leaveRepository->findByUserId($id, $status, $page, $size, $order);
+
+        foreach ($leaves as $leave) {
+            $entityManager->remove($leave);
+            $entityManager->flush();
+        }
+
+        $team && $team->setManager();
+
         $entityManager->remove($user);
         $entityManager->flush();
 
@@ -100,6 +141,8 @@ class UserController extends AbstractController
             ->configureFirstName($isPutMethod)
             ->configureLastName($isPutMethod)         
             ->configurePassword($isPutMethod)
+            ->configureEmail($isPutMethod)
+            ->configurePassword($isPutMethod)
             ->configureTeam($isPutMethod)          
             ->resolve($requestBody);
             
@@ -117,6 +160,9 @@ class UserController extends AbstractController
                     case "team":
                         $team = $teamRepository->findOneBy(['id' => $fields["team"]]);
                         $user->setTeam($team);
+                        break;
+                    case "email":
+                        $user->setEmail($fields["email"]);
                         break;
                 }
             }

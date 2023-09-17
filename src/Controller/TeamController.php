@@ -61,6 +61,7 @@ class TeamController extends AbstractController
             $team->setName($fields["name"]);
             $team->setDescription($fields["description"]);
             $manager->setTeam($team);
+            $manager->setRoles(['ROLE_COLLABORATOR']);
             $team->setManager($manager);
             
             $errors = $validator->validate($team);

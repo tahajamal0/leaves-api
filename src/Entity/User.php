@@ -10,9 +10,12 @@ use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Serializer\Annotation\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Component\HttpFoundation\File\File;
+use Vich\UploaderBundle\Mapping\Annotation as Vich;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\HasLifecycleCallbacks]
+#[Vich\Uploadable]
 class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
     #[ORM\Id]
@@ -48,9 +51,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[Assert\Length(max: 8)]
     #[Groups(['leave', 'user', 'team'])]
     private ?string $lastName = null;
-
-    #[ORM\Column(length: 36)]
-    private ?string $token = null;
 
     #[ORM\OneToMany(mappedBy: 'owner', targetEntity: Leave::class, orphanRemoval: true)]
     #[Groups(['user'])]
@@ -155,19 +155,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setLastName(string $lastName): static
     {
         $this->lastName = $lastName;
-
-        return $this;
-    }
-
-    public function getToken(): ?string
-    {
-        return $this->token;
-    }
-
-    #[ORM\PrePersist]
-    public function setToken(): static
-    {
-        $this->token = bin2hex(random_bytes(18));
 
         return $this;
     }

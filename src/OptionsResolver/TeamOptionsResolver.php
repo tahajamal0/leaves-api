@@ -38,4 +38,17 @@ class TeamOptionsResolver extends OptionsResolver
 
     return $this;
   }
+
+  public function configureTeam(bool $isRequired = true): self
+  {
+    $this->setDefined("team")->setAllowedTypes("team", "string");
+
+    if($isRequired) {
+      $this->setRequired("team");
+    }
+
+    return $this;
+  }
+
+  
 }

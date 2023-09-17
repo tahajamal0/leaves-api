@@ -24,10 +24,36 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
 class LeaveController extends AbstractController
 {
     #[Route('/leaves', name: 'todos', methods: ["GET"])]
-    public function index(LeaveRepository $leaveRepository, SerializerInterface $serializer): JsonResponse
+    public function index(Request $request, LeaveRepository $leaveRepository, SerializerInterface $serializer): JsonResponse
     {
         try {
-            $leaves = $leaveRepository->findAll();
+            $queryParams = $request->query->all();
+            $status = $queryParams["status"] ?? 'all';
+            $order = $queryParams["sortBy"] ?? 'ASC';
+            $size = $queryParams["size"] ?? 100;
+            $page = $queryParams["page"] ?? 1;
+
+            $leaves = $leaveRepository->findByStatusAndSort($status, $page, $size, $order);
+            
+            $data = $serializer->serialize($leaves, 'json', ['groups' => 'leave']);
+
+            return new JsonResponse($data, 200, [], true);
+        } catch (Exception $e) {
+            return new BadRequestHttpException($e->getMessage());   
+        }
+    }
+
+    #[Route('/leaves/team/{id}', name: 'leavesByTeam', methods: ["GET"])]
+    public function leavesByTeam(int $id, Request $request, LeaveRepository $leaveRepository, SerializerInterface $serializer): JsonResponse
+    {
+        try {
+            $queryParams = $request->query->all();
+            $status = $queryParams["status"] ?? 'all';
+            $order = $queryParams["sortBy"] ?? 'ASC';
+            $size = $queryParams["size"] ?? 100;
+            $page = $queryParams["page"] ?? 1;
+            
+            $leaves = $leaveRepository->findByTeamId($id, $status, $page, $size, $order);
             
             $data = $serializer->serialize($leaves, 'json', ['groups' => 'leave']);
 
@@ -45,6 +71,22 @@ class LeaveController extends AbstractController
         return new JsonResponse($data, 200, [], true);
     }
 
+    #[Route('/leaves/user/{id}', name: 'get_leaveByUser', methods: ["GET"])]
+    public function getLeaveByUser(int $id, SerializerInterface $serializer, LeaveRepository $leaveRepository, Request $request) : JsonResponse
+    {
+        $queryParams = $request->query->all();
+        $status = $queryParams["status"] ?? 'all';
+        $order = $queryParams["sortBy"] ?? 'ASC';
+        $size = $queryParams["size"] ?? 100;
+        $page = $queryParams["page"] ?? 1;
+        
+        $leaves = $leaveRepository->findByUserId($id, $status, $page, $size, $order);
+
+        $data = $serializer->serialize($leaves, 'json', ['groups' => 'leave']);
+
+        return new JsonResponse($data, 200, [], true);
+    }
+
     #[Route('/leaves', name: "create_leave", methods: ["POST"])]
     public function createLeave(Request $request, EntityManagerInterface $entityManager, ValidatorInterface $validator, LeaveOptionsResolver $leaveOptionsResolver, UserRepository $userRepository, SerializerInterface $serializer) : JsonResponse
     {
@@ -56,6 +98,7 @@ class LeaveController extends AbstractController
             ->configureStartAt(true)
             ->configureEndAt(true)
             ->configureType(true)        
+            ->configureComment(true)        
             ->configureOwner(true)        
             ->resolve($requestBody);
 
@@ -65,6 +108,7 @@ class LeaveController extends AbstractController
             $leave->setStartAt(new DateTimeImmutable($fields["startAt"]));
             $leave->setEndAt(new DateTimeImmutable($fields["endAt"]));
             $leave->setType($fields["type"]);
+            $leave->setComment($fields["comment"]);
             $leave->setOwner($owner);
 
             
@@ -105,6 +149,8 @@ class LeaveController extends AbstractController
             ->configureStartAt($isPutMethod)
             ->configureEndAt($isPutMethod)
             ->configureType($isPutMethod)            
+            ->configureStatus($isPutMethod)            
+            ->configureComment($isPutMethod)            
             ->resolve($requestBody);
             
             foreach ($fields as $field => $value) {
@@ -117,6 +163,12 @@ class LeaveController extends AbstractController
                         break;
                     case "type":
                         $leave->setType($fields["type"]);
+                        break;
+                    case "status":
+                        $leave->setStatus($fields["status"]);
+                        break;
+                    case "comment":
+                        $leave->setComment($fields["comment"]);
                         break;
                 }
             }

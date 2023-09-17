@@ -30,7 +30,7 @@ class Team
     private Collection $users;
 
     #[ORM\OneToOne(cascade: ['persist'])]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\JoinColumn(nullable: true)]
     #[Groups(['team'])]
     private ?User $manager = null;
 
@@ -103,7 +103,7 @@ class Team
         return $this->manager;
     }
 
-    public function setManager(User $manager): static
+    public function setManager(User $manager = null): static
     {
         $this->manager = $manager;
 

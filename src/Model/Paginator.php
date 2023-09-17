@@ -9,7 +9,7 @@ use ArrayIterator;
 
 class Paginator extends DoctrinePaginator
 {
-    public const ITEMS_PER_PAGE = 5;
+    // public const ITEMS_PER_PAGE = 5;
 
     private int $total;
     private array $data;
@@ -17,10 +17,10 @@ class Paginator extends DoctrinePaginator
     private int $totalpages;
     private int $page;
 
-    public function __construct(QueryBuilder|Query $query, int $page = 1, bool $fetchJoinCollection = true)
+    public function __construct(QueryBuilder|Query $query, int $itemsPerPage, int $page = 1, bool $fetchJoinCollection = true)
     {
-        $query->setFirstResult(($page - 1) * self::ITEMS_PER_PAGE);
-        $query->setMaxResults(self::ITEMS_PER_PAGE);
+        $query->setFirstResult(($page - 1) * $itemsPerPage);
+        $query->setMaxResults($itemsPerPage);
 
         parent::__construct($query, $fetchJoinCollection);
         $this->total = $this->count();
@@ -29,7 +29,7 @@ class Paginator extends DoctrinePaginator
         $this->page = $page;
 
         try {
-            $this->totalpages = ceil($this->total / self::ITEMS_PER_PAGE);
+            $this->totalpages = ceil($this->total / $itemsPerPage);
         } catch (\DivisionByZeroError $e) {
             $this->totalpages = 0;
         }
@@ -88,20 +88,20 @@ class Paginator extends DoctrinePaginator
         return false;
     }
 
-    public function getIterator(): ArrayIterator
-    {
-        return new ArrayIterator([
-            'data' => $this->getData(),
-            'pagination' => [
-                'total' => $this->getTotal(),
-                'count' => $this->getCount(),
-                'offset' => $this->getOffset(),
-                'items_per_page' => $this->getItemsPerPage(),
-                'total_pages' => $this->getTotalPages(),
-                'current_page' => $this->getCurrentPage(),
-                'has_next_page' => $this->hasNextPage(),
-                'has_previous_page' => $this->hasPreviousPage(),
-            ],
-        ]);
-    }
+    // public function getIterator(): ArrayIterator
+    // {
+    //     return new ArrayIterator([
+    //         'data' => $this->getData(),
+    //         'pagination' => [
+    //             'total' => $this->getTotal(),
+    //             'count' => $this->getCount(),
+    //             'offset' => $this->getOffset(),
+    //             'items_per_page' => $this->getItemsPerPage(),
+    //             'total_pages' => $this->getTotalPages(),
+    //             'current_page' => $this->getCurrentPage(),
+    //             'has_next_page' => $this->hasNextPage(),
+    //             'has_previous_page' => $this->hasPreviousPage(),
+    //         ],
+    //     ]);
+    // }
 }

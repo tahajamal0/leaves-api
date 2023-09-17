@@ -49,6 +49,10 @@ class Leave
     #[Groups(['leave'])]
     private ?User $owner = null;
 
+    #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(['leave', 'user'])]
+    private ?string $comment = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -123,6 +127,18 @@ class Leave
     public function setOwner(?User $owner): static
     {
         $this->owner = $owner;
+
+        return $this;
+    }
+
+    public function getComment(): ?string
+    {
+        return $this->comment;
+    }
+
+    public function setComment(?string $comment): static
+    {
+        $this->comment = $comment;
 
         return $this;
     }

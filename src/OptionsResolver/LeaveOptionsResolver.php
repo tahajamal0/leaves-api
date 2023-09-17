@@ -39,12 +39,34 @@ class LeaveOptionsResolver extends OptionsResolver
     return $this;
   }
 
+  public function configureStatus(bool $isRequired = true): self
+  {
+    $this->setDefined("status")->setAllowedTypes("status", "string");
+
+    if($isRequired) {
+      $this->setRequired("status");
+    }
+
+    return $this;
+  }
+
   public function configureOwner(bool $isRequired = true): self
   {
     $this->setDefined("owner")->setAllowedTypes("owner", "string");
 
     if($isRequired) {
       $this->setRequired("owner");
+    }
+
+    return $this;
+  }
+
+  public function configureComment(bool $isRequired = true): self
+  {
+    $this->setDefined("comment")->setAllowedTypes("comment", "string");
+
+    if($isRequired) {
+      $this->setRequired("comment");
     }
 
     return $this;

@@ -48,6 +48,19 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
         return new Paginator($query, $page);
     }
 
+    public function findByTeamId(int $teamId)
+    {
+        $query = $this->createQueryBuilder('u')
+                ->innerJoin('u.team', 't')
+                ->andWhere('t.id = :teamId')
+                ->setParameter('teamId', 12)
+                ->getQuery()->getResult();
+
+        dump($query);
+
+        return $query;
+    }
+
 //    /**
 //     * @return User[] Returns an array of User objects
 //     */
